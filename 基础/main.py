@@ -15,3 +15,6 @@ lowercase_to_uppercase = dict(zip(string.ascii_lowercase, string.ascii_uppercase
 
 print("大写字母转小写字母的字典:", uppercase_to_lowercase)
 print("小写字母转大写字母的字典:", lowercase_to_uppercase)
+
+
+from collections import OrderedDict

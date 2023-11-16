@@ -34,7 +34,7 @@ class Solution:
                 break
             if i >= g[count]:
                 count += 1
-        return count
+        return countgei
 
 
 if __name__ == "__main__":
