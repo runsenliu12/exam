@@ -308,3 +308,50 @@ public class SparkElasticsearchIntegration {
 - `spark.es.nodes.wan.only`设置为`true`是为了适配运行在不同网络环境下的Elasticsearch集群，如公有云环境。
 
 使用`saveToEs`可以让你直接将DataFrame保存到Elasticsearch，而不需要关心数据的具体批处理逻辑。这种方法使得代码更简洁，并且依赖于Elasticsearch-Hadoop库来优化数据传输的过程。
+
+
+在使用Apache Spark与Elasticsearch集成时，直接控制每次读取和推送的数量不像操作关系型数据库那样直观，因为Spark和Elasticsearch都是为大规模数据处理设计的，通常会自动管理分区和批处理。不过，你可以通过一些配置和策略来间接控制数据处理的粒度和批次大小。
+
+### 控制Spark读取的数据量
+
+控制Spark从HDFS读取的数据量不是直接通过设置条目数来实现的，而是通过分区的概念。当Spark读取HDFS上的文件时，它会根据文件的大小和配置参数来决定分多少个分区来读取数据。你可以通过调整这些参数来影响Spark处理数据的方式：
+
+- **`spark.sql.files.maxPartitionBytes`**: 控制Spark读取文件时每个分区的最大字节数，默认是128MB。减少这个值可以增加分区数量，从而减少每个分区的数据量。
+- **`spark.sql.shuffle.partitions`**: 设置Shuffle操作后的分区数，默认是200。这个参数可以影响大多数操作后数据的分布。
+
+### 控制推送到Elasticsearch的批次大小
+
+当使用`saveToEs`函数将数据写入Elasticsearch时，可以通过设置一些参数来控制批次大小：
+
+- **`es.batch.size.entries`**: 控制每个批次发送到Elasticsearch的文档数。默认情况下，这个值是由`es.batch.size.bytes`和文档大小共同决定的，但你可以手动设置这个值来强制每个批次的大小。
+- **`es.batch.size.bytes`**: 控制每个批次发送到Elasticsearch的最大字节数，默认是1MB。减少这个值会减少每个批次的数据量。
+
+### 示例配置
+
+以下是如何在Spark应用程序中设置这些参数的示例：
+
+```java
+import org.apache.spark.sql.SparkSession;
+
+public class SparkEsIntegration {
+    public static void main(String[] args) {
+        SparkSession spark = SparkSession.builder()
+                .appName("Spark Elasticsearch Integration")
+                .config("spark.es.nodes", "localhost")
+                .config("spark.es.port", "9200")
+                .config("spark.es.index.auto.create", "true")
+                .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+                .config("spark.sql.files.maxPartitionBytes", "104857600") // 约为100MB
+                .config("spark.sql.shuffle.partitions", "50") // Shuffle操作后的分区数
+                .config("es.batch.size.entries", "1000") // 每个批次1000条文档
+                .config("es.batch.size.bytes", "5242880") // 每个批次约为5MB
+                .getOrCreate();
+
+        // 省略读取数据和写入Elasticsearch的代码...
+
+        spark.stop();
+    }
+}
+```
+
+通过调整这些参数，你可以间接控制Spark处理和推送数据的粒度，以适应不同的性能需求和资源限制。请注意，这些设置需要根据你的具体环境和需求进行调整，以找到最佳的性能平衡点。
