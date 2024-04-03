@@ -5,17 +5,20 @@ from tensorflow import keras
 import tensorflow as tf
 from tensorflow import keras
 
+
 class Din:
     # 定义多层感知机模型
-    mlp = keras.Sequential([
-        keras.layers.Dense(60, activation=tf.nn.sigmoid, name="f1_att"),
-        keras.layers.Dense(40, activation=tf.nn.sigmoid, name="f2_att"),
-        keras.layers.Dense(1, activation=tf.nn.sigmoid, name="f3_att"),
-    ])
+    mlp = keras.Sequential(
+        [
+            keras.layers.Dense(60, activation=tf.nn.sigmoid, name="f1_att"),
+            keras.layers.Dense(40, activation=tf.nn.sigmoid, name="f2_att"),
+            keras.layers.Dense(1, activation=tf.nn.sigmoid, name="f3_att"),
+        ]
+    )
 
     @classmethod
     def attention(cls, ori_queries, keys, keys_length):
-        '''
+        """
         DIN 模型的注意力机制部分
 
         Parameters:
@@ -25,7 +28,7 @@ class Din:
 
         Returns:
         - output: 注意力加权后的键向量，形状为 [B, 1, H]。
-        '''
+        """
 
         # 复制查询向量，使其与键向量相同维度
         queries = tf.tile(ori_queries, [1, tf.shape(keys)[1], 1])
@@ -62,7 +65,9 @@ class Din:
 
 # Example usage
 ori_queries_example = tf.constant([[[1.0, 2.0, 3.0]]])  # Shape: [1, 1, 3]
-keys_example = tf.constant([[[4.0, 5.0, 6.0], [7.0, 8.0, 9.0], [10.0, 11.0, 12.0]]])  # Shape: [1, 3, 3]
+keys_example = tf.constant(
+    [[[4.0, 5.0, 6.0], [7.0, 8.0, 9.0], [10.0, 11.0, 12.0]]]
+)  # Shape: [1, 3, 3]
 keys_length_example = tf.constant([3])  # Shape: [1]
 
 # Call the attention method
@@ -74,4 +79,25 @@ print(output_example.numpy())
 print(output_example.shape)
 
 
+# Example usage
+ori_queries_example = tf.constant(
+    [[[1.0, 2.0, 3.0, 1.0, 2.0, 3.0]]]
+)  # Shape: [1, 1, 6]
+keys_example = tf.constant(
+    [
+        [
+            [4.0, 5.0, 6.0, 1.0, 2.0, 3.0],
+            [7.0, 8.0, 9.0, 1.0, 2.0, 3.0],
+            [10.0, 11.0, 12.0, 1.0, 2.0, 3.0],
+        ]
+    ]
+)  # Shape: [1, 3, 6]
+keys_length_example = tf.constant([3])  # Shape: [1]
 
+# Call the attention method
+output_example = Din.attention(ori_queries_example, keys_example, keys_length_example)
+
+# Print the output
+print("Attention Output:")
+print(output_example.numpy())
+print(output_example.shape)
